@@ -37,12 +37,78 @@ import { TrainerBluetooth } from './bluetooth.js';
 import { ZlowScene } from './scene.js';
 import { HUD } from './hud.js';
 import { Strava } from './strava.js';
+import { WorkoutManager, WorkoutModal } from './workout.js';
+import { MultiplayerClient, MultiplayerModal } from './multiplayer.js';
 
 // Exported function to initialize app (for browser and test)
 export function initZlowApp({
   getElement = (id) => document.getElementById(id),
-  requestAnimationFrameFn = window.requestAnimationFrame
+  requestAnimationFrameFn = window.requestAnimationFrame,
+  getAuthToken = () => localStorage.getItem('zlow_token'),
+  apiBase = 'http://localhost:8080'
 } = {}) {
+  // Ensure we have an auth token, fetch one if needed
+  let tokenInitialized = false;
+  let cachedToken = getAuthToken();
+  
+  if (!cachedToken) {
+    console.log('[Zlow] No auth token found in localStorage. Fetching test token from API...');
+    tokenInitialized = false;
+    fetch(`${apiBase}/auth/test-token?t=${Date.now()}`)
+      .then(res => res.json())
+      .then(data => {
+        if (data.token) {
+          localStorage.setItem('zlow_token', data.token);
+          cachedToken = data.token;
+          tokenInitialized = true;
+          console.log('[Zlow] Test token saved to localStorage and ready for use');
+        }
+      })
+      .catch(err => {
+        console.error('[Zlow] Failed to fetch test token:', err);
+        tokenInitialized = true; // Mark as initialized even on error so we don't retry forever
+      });
+  } else {
+    tokenInitialized = true;
+    console.log('[Zlow] Auth token found in localStorage');
+  }
+
+  // Create a function that returns the current token (from cache or storage)
+  // This function also refreshes the token if it appears to be expired
+  const getCurrentAuthToken = () => {
+    const token = localStorage.getItem('zlow_token') || cachedToken;
+    
+    if (token) {
+      // Quick check: if token looks like JWT, try to parse the payload to check expiry
+      try {
+        const parts = token.split('.');
+        if (parts.length === 3) {
+          const payload = JSON.parse(atob(parts[1]));
+          const expiresAt = payload.exp * 1000; // Convert to milliseconds
+          const now = Date.now();
+          
+          if (now > expiresAt) {
+            console.warn('[Zlow] Token has expired. Fetching a fresh one...');
+            // Token expired, fetch a new one
+            fetch(`${apiBase}/auth/test-token?t=${Date.now()}`)
+              .then(res => res.json())
+              .then(data => {
+                if (data.token) {
+                  localStorage.setItem('zlow_token', data.token);
+                  console.log('[Zlow] Fresh token saved to localStorage');
+                }
+              })
+              .catch(err => console.error('[Zlow] Failed to fetch fresh token:', err));
+          }
+        }
+      } catch (e) {
+        // If parsing fails, just use the token as-is
+      }
+    }
+    
+    return token;
+  };
+
   const trainer = new TrainerBluetooth();
   const pacerSpeedInput = getElement('pacer-speed');
   const scene = new ZlowScene(Number(pacerSpeedInput.value), { getElement });
@@ -52,6 +118,154 @@ export function initZlowApp({
   });
   const hud = new HUD({ getElement });
   const strava = new Strava();
+
+  // Initialize workout system
+  const workoutManager = new WorkoutManager({
+    apiBase: 'http://localhost:8080',
+    getToken: getAuthToken
+  });
+
+  const workoutModal = new WorkoutModal({
+    workoutManager,
+    getElement,
+    onWorkoutSelected: (workout) => {
+      // Execute selected workout
+      const program = workoutManager.getWorkoutProgram(workout.id);
+      scene.setWorkoutProgram(program);
+      console.log('Starting workout:', workout.name);
+    }
+  });
+
+  // Make workout modal globally accessible
+  window.workoutModalInstance = workoutModal;
+
+  // Initialize multiplayer system
+  let multiplayerClient = null;
+  const multiplayerModal = new MultiplayerModal({
+    getElement,
+    getToken: getCurrentAuthToken,
+    apiBase: apiBase,
+    onJoinRoom: ({ roomId, lobbyName }) => {
+      console.log(`[Main] onJoinRoom called with roomId=${roomId}, lobbyName=${lobbyName}`);
+      console.log(`Joined multiplayer lobby: ${lobbyName} (${roomId})`);
+      
+      // Show multiplayer panel
+      const mpPanel = getElement('multiplayer-panel');
+      if (mpPanel) mpPanel.style.display = 'block';
+      
+      // Get the client that was created in the modal
+      if (multiplayerModal.multiplayerClient) {
+        multiplayerClient = multiplayerModal.multiplayerClient;
+        
+        // Update status
+        const statusEl = getElement('multiplayer-status');
+        if (statusEl) {
+          statusEl.textContent = `Connected to: ${roomId}`;
+        }
+        
+        // Setup listener for chat messages from other riders
+        multiplayerClient.on('message', (data) => {
+          console.log('[Main] Received message:', data);
+          const chatEl = getElement('chat-messages');
+          if (chatEl) {
+            const msgDiv = document.createElement('div');
+            msgDiv.style.color = '#fff';
+            // Handle both formats: {content: {message: "..."}} and {content: "..."}
+            const message = typeof data.content === 'string' ? data.content : (data.content?.message || 'Message');
+            msgDiv.textContent = `Other: ${message}`;
+            chatEl.appendChild(msgDiv);
+            chatEl.scrollTop = chatEl.scrollHeight;
+          }
+        });
+        console.log('[Main] Message event listener registered');
+        
+        // Setup listener for state updates from other riders
+        multiplayerClient.on('state_update', (data) => {
+          console.log('Received state update from rider:', data);
+          
+          // Update riders list
+          const ridersList = getElement('riders-list');
+          if (ridersList && data.content) {
+            // Just show summary (in real app would track multiple riders)
+            const speed = Math.round(data.content.speed * 10) / 10;
+            const power = Math.round(data.content.power);
+            ridersList.innerHTML = `Other rider: ${power}W @ ${speed} km/h`;
+          }
+        });
+        
+        // Chat send button
+        const chatInput = getElement('chat-input');
+        const chatSendBtn = getElement('chat-send-btn');
+        console.log('[Main] Chat elements found - chatInput:', !!chatInput, 'chatSendBtn:', !!chatSendBtn);
+        if (chatSendBtn && chatInput) {
+          chatSendBtn.addEventListener('click', () => {
+            const message = chatInput.value.trim();
+            console.log('[Main] Chat send clicked. Message:', message, 'Multiplayer client:', multiplayerClient);
+            if (message && multiplayerClient) {
+              console.log('[Main] Calling sendChat with message:', message);
+              multiplayerClient.sendChat(message);
+              chatInput.value = '';
+              
+              // Show own message in chat
+              const chatEl = getElement('chat-messages');
+              if (chatEl) {
+                const msgDiv = document.createElement('div');
+                msgDiv.style.color = '#90ee90';
+                msgDiv.textContent = `You: ${message}`;
+                chatEl.appendChild(msgDiv);
+                chatEl.scrollTop = chatEl.scrollHeight;
+              }
+            }
+          });
+          
+          // Send on Enter key
+          chatInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') chatSendBtn.click();
+          });
+        }
+
+        // Send state updates periodically
+        const stateInterval = setInterval(() => {
+          if (multiplayerClient && multiplayerClient.isConnected) {
+            multiplayerClient.sendState({
+              power: riderState.power,
+              speed: riderState.speed,
+              distance: rideHistory.length > 0 ? rideHistory[rideHistory.length - 1].distance : 0,
+              time: Date.now() - historyStartTime
+            });
+          } else {
+            clearInterval(stateInterval);
+          }
+        }, 1000);
+      }
+    }
+  });
+
+  // Make multiplayer modal globally accessible
+  window.multiplayerModalInstance = multiplayerModal;
+
+  // Add workout button to HUD
+  const hudEl = getElement('hud');
+  if (hudEl && !getElement('workout-btn')) {
+    const workoutBtn = document.createElement('button');
+    workoutBtn.id = 'workout-btn';
+    workoutBtn.textContent = '💪 Workouts';
+    workoutBtn.style.display = 'block';
+    workoutBtn.style.marginBottom = '10px';
+    workoutBtn.addEventListener('click', () => workoutModal.toggle());
+    hudEl.insertBefore(workoutBtn, getElement('connect-btn'));
+  }
+
+  // Add multiplayer button to HUD
+  if (hudEl && !getElement('multiplayer-btn')) {
+    const multiplayerBtn = document.createElement('button');
+    multiplayerBtn.id = 'multiplayer-btn';
+    multiplayerBtn.textContent = '🌐 Multiplayer';
+    multiplayerBtn.style.display = 'block';
+    multiplayerBtn.style.marginBottom = '10px';
+    multiplayerBtn.addEventListener('click', () => multiplayerModal.toggle());
+    hudEl.insertBefore(multiplayerBtn, getElement('connect-btn'));
+  }
 
   let riderState = { power: 0, speed: 0 };
   let rideHistory = [];

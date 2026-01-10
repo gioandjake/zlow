@@ -14,6 +14,9 @@ export class ZlowScene {
     this.objects = [];
     this.objectsLoaded = false;
     this.edgeObjects = [];
+    this.workoutProgram = null; // For custom workouts
+    this.currentSegmentIndex = 0;
+    this.segmentStartTime = null;
     // Helper functions for DRY object creation
     this._createBuilding = (x, y, z, w, h, d) => {
       const obj = document.createElement('a-entity');
@@ -48,6 +51,42 @@ export class ZlowScene {
   setPacerSpeed(kmh) {
     this.pacerSpeed = kmh;
   }
+
+  /**
+   * Set a custom workout program
+   * program: array of {power, duration} segments
+   */
+  setWorkoutProgram(program) {
+    this.workoutProgram = program;
+    this.currentSegmentIndex = 0;
+    this.segmentStartTime = Date.now();
+    this.pacerActive = true;
+    console.log('Workout program set:', program);
+  }
+
+  /**
+   * Get current segment from workout program
+   * Returns {power, duration} or null
+   */
+  getCurrentWorkoutSegment() {
+    if (!this.workoutProgram || this.workoutProgram.length === 0) return null;
+
+    const elapsed = (Date.now() - this.segmentStartTime) / 1000;
+    let timeAccum = 0;
+
+    for (let i = 0; i < this.workoutProgram.length; i++) {
+      const seg = this.workoutProgram[i];
+      if (elapsed < timeAccum + seg.duration) {
+        this.currentSegmentIndex = i;
+        return seg;
+      }
+      timeAccum += seg.duration;
+    }
+
+    // Workout finished
+    return null;
+  }
+
   _initEdgeObjects() {
     // Place a dense row of trees/buildings along both edges of the ground (buildings further out)
     // Terrain is width 100, so edges at -50 and 50
