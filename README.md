@@ -1,136 +1,99 @@
-![ZlowGif](https://github.com/user-attachments/assets/82ad9bf2-1d07-419f-b6dd-87fa9ebbbbb5)
+# Downloading Zlow
 
-# Zlow: Browser-Based Cycling Simulator Prototype
+To run Zlow, first you will need to download the code for it: 
 
-A modular, browser-based cycling simulator. Built with JavaScript, A-Frame, and Bluetooth APIs, with Strava export integration.
+1. Download and install git at https://git-scm.com
+    - Get the most recent version (x64).
+    - The default installer settings work fine here.
+    - To can check that you have it installed, type ```git -v``` in the terminal/comand line. 
+    - To access the terminal/command line: 
+        - On Windows 11, hold shift, right-click on a folder area in Windows explorer, and select "Open in Terminal". 
+        - On Windows 10, hold shift, right-click on a folder area in Windows explorer, and select "open PowerShell window here". 
+2. In the file explorer, go to the folder you want to download Zlow to, and open the command line in it.
+3. In the command line, enter ```git clone https://github.com/gioandjake/zlow.git```
+4. Once this is done, close the command terminal.
 
-## Features
-- **Bluetooth Connectivity:** Connect to Wahoo-compatible smart trainers, poll real-time power, cadence, and speed.
-- **3D Environment:** Rendered with A-Frame, includes terrain, scenery, and a simple avatar.
-- **Pacer Rider:** Fixed-power pacer for comparison.
-- **HUD Overlay:** Shows power, cadence, speed, distance, time, and position vs. pacer.
-- **Strava Export:** Upload ride data to Strava via API after each session.
+# Running the frontend (Zlow)
 
-## Structure
-- `resources` — Contains various resources.
-	- `favicons` — Stores the program favicon.
-		- `favicon.ico` — The main favicon used for the program.
-		- `ZlowFavicon-dark.svg` — A variant of the favicon used when the browser is in dark mode for better readability.
-		- `ZlowFavicon.svg` — A variant of the favicon used when the browser is in light mode.
-	- `fonts` — Stores a number fonts used for HUD elements and the main menu.
-		- `FugazOne-Regular.ttf` — The font Fugaz One.
-		- `Nunito-Italic-VariableFont_wght.ttf` — The font Nunito Italic.
-		- `Nunito-VariableFont_wght.ttf` — The font Nunito.
-		- `OFL 2.txt` — The license for the font Nunito.
-		- `OFL.txt` — The license for the font Fugaz One.
-	- `images` — Contains a number of important images for different pages.
-		- `backgroung.png` — The background for the main menu.
-		- `calories.svg` — The icon used to represent calories in the hud.
-		- `center-hud.svg` — A mask to shape the center of the hud, alongside some buttons on other pages.
-		- `license.pdf` — The license for the calories and time images.
-		- `Thumbs.db` — TODO: Find who created this, and what its purpose is.
-		- `time.svg` — The icon used to represent time on the hud.
-	- `models` — Stores various 3D models.
-		- `bgmodels` — Stores 3D models that appear in the background of the scene.
-			- `bush1.glb` — A bush that can appear in the background.
-			- `cloud1.glb` — One version of a cloud that appears in the sky.
-			- `cloud2.glb` — A second cloud that appears in the sky.
-			- `cloud3.glb` — A third cloud that also appears in the sky.
-			- `House.glb` — A house that appears in the background.
-			- `TallBuilding.glb` — A tall building that appears in the background.
-			- `tree1.glb` — A tree model that appears in the background.
-			- `tree2.glb` — A second tree model that appears in the background.
-			- `tree3.glb` — A third tree model that can appear in the background.
-			- `Trees-License.txt` — The license for the tree models.
-			- `WideBuilding.glb` — A wider building model that appears in the background.
-		- `playermodels` — Stores the models of the player and the bike.
-			- `bikeV4.glb` — The 3D model of the bike.
-			- `femaleV6.glb` — The female character model.
-			- `maleV5.glb` — The male character model.
-	- `textures` — Stores image textures.
-		- `Grass.jpeg` — The image texture for the grass.
-		- `Track.jpeg` — The image texture for the track.
-- `src` — Stores all source code for the project.
-	- `css` — Stores CSS source code.
-		- `hud.css` — Handles CSS styles for the modern HUD.
-		- `menu.css` — Handles CSS styles for the main menu.
-		- `playerCustomization.css` — Handles CSS styles for the player customization screen.
-		- `style.css` — Handles general CSS styles for the program.
-	- `html` — Stores HTML source code.
-		- `mainMenu.html` — Main entry point, allows connecting the trainer, and provides access to various settings.
-		- `playerCustomization.html` — Screen for customizing the player.
-		- `zlow.html` — Loads A-Frame scene and UI.
-	- `js` — Contains JavaScript code.
-		- `scene` - Handles scene generation.
-			- `core` — core utilities for scene generation.
-				- `Terrain.js` — Handles Terrain generation.
-				- `util.js` — Contains several utilities for scene generation.
-			- `env` — Handles the overall environment.
-				- `Cloud.js` — Handles creating the clouds above the scene.
-				- `Track.js` — Handles creating track template pieces.
-				- `SceneryBand.js` — Handles creating the bands and object placement within.
-				- `SceneryManager.js` — Loads the config files from /policy.
-			- `objects` — Handles various 3D objects.
-				- `kinds` — Stores representations of different 3D objects along the side of the track.
-					- `Building.js` — Handles various buildings along the side of the track.
-					- `index.js` — Contains various utilities for handling different kinds of elements.
-					- `Tree.js` — Handles trees along the side of the track.
-				- `ObjectField.js` — Handles creating a set of objects at different locations.
-			- `policy` — Contains the config and policies for banding.
-				- `BandPolicy.md` — Documentation on policies.
-				- `DefaultPolicy.js` — A default policy for setting up custom policies.
-				- `edge_default_cfg.js` — Handles the banding on the edges.
-				- `old_default_cfg.js` — Recreates the original behavior with the new policy system.
-				- `ScenePolicy.js` — Handles turning the config file into a policy.
-				- `test_multiband_cfg.js` — A test policy for multiple bands in one config file.
-			- `camera.js` — Handles updating various properties involving the camera.
-			- `index.js` — Sets up and updates the A-Frame 3D world.
-		- `units` — Handles various units and unit conversions.
-			- `index.js` — Sets up units, and provides references to the currently used unit conversions.
-			- `kg.js` — Handles unit conversions for Kilograms - the default weight unit.
-			- `km.js` — Handles unit conversions for Kilometers - the default distance unit.
-			- `kmh.js` — Handles unit conversions for Kilometers per Hour - the default speed unit.
-			- `lb.js` — Handles unit conversions for Pounds.
-			- `mi.js` — Handles unit conversions for Miles.
-			- `mph.js` — Handles unit conversions for Miles per Hour.
-			- `units.md` — Documentation on different units.
-			- `W.js` — Handles unit conversions for Watts - the default power unit.
-	    - `avatarCreator.js` — Sets up A-Frame 3D avatar.
-		- `avatarMovement.js` — Updates A-Frame 3D avatar.
-		- `bluetooth.js` — Handles Bluetooth device connection and data polling.
-		- `constants.js` — Stores important constants for the program execution.
-		- `hud.js` — Renders the heads-up display overlay.
-		- `keyboardMode.js` — Handles keyboard mode functionalities and variables.
-		- `main.js` — Main app entry point.
-		- `menu.js` — Handles event listeners on the main menu.
-		- `pause_countdown.js` — Handles the countdown when the simulation is paused.
-		- `simulationstate.js` — Handles tracking the state of the simulation.
-		- `standardMode.js` — Handles standard mode functionalities and variables.
-		- `strava.js` — Handles Strava OAuth and activity upload.
-		- `workoutChoice` — Handles the dropdown menu for choosing workouts
+To run Zlow, you will need to set up a local server for it. 
 
-## Stretch Goals
-- Local/cloud session storage
-- Terrain/route selection
-- Support for additional Bluetooth fitness devices
+## Option 1 - using the command line
 
----
+1. Download and install Python at https://www.python.org/downloads/
+    - When running the installer, the capital letters are the default.
+    - You can check that you have it installed by entering ```python3 --version``` in the command line. 
+    - To access the terminal/command line: 
+        - On Windows 11, hold shift, right-click on a folder area in Windows explorer, and select "Open in Terminal". 
+        - On Windows 10, hold shift, right-click on a folder area in Windows explorer, and select "open PowerShell window here". 
+2. Go to the folder where Zlow is located, open the folder called frontend, and open the command line in it. 
+3. Enter the command ```python3 -m http.server 8000```
+4. In your web browser, open a tab to to ```localhost:8000/src/html/mainMenu.html```
 
-## Quick Start
-1. Open `src/html/mainMenu.html` in a modern browser (Chrome/Edge recommended).
-2. Click "Connect Trainer" to pair with your smart trainer.
-3. If needed, click "Settings", and customize any needed settings in the new popup menu.
-4. Click "Start" to start the simulation.
-5. Start pedaling to see your avatar move and HUD update.
-6. After your ride, export to Strava.
+## Option 2 - using a batch file
 
----
+1. Download and install Python at https://www.python.org/downloads/
+    - You can check that you have it installed by entering ```python3 --version``` in the command line. 
+2. Go to the folder you downloaded Zlow to. 
+3. Double-click on ```frontend.bat```
+4. In your web browser, navigate to ```localhost:8000/src/html/mainMenu.html```
 
-## Development Notes
-- Modular ES6 code, no build step required.
-- See each JS file for further documentation.
+## Important note about running the frontend
+Some installations of python use a different name. If this is the case, you might have to replace python3 in the command prompt above with python or py. If this is the case, the .bat script won't work either, and will also require modification. 
 
-You can find a live example at https://gioandjake.com/zlow (recommend to use Chrome)
+# Running the backend (Strava, Multiplayer, crashlogs)
 
-# Surviving on your donations
-[Donations help keep the server up](https://paypal.me/jsimonson2013) :smile:
+To run multiplayer, Strava, and crash logging, you need a custom server. You will also need your own Strava API application created.
+
+1. Go the the Zlow folder, and navigate to backend. 
+2. Under the peer_service folder is a file called .env.example. Copy it, and name it .env.
+3. Open .env and fill in your values:
+```
+PATH=/peerServer
+PORT=9000
+```
+4. Go to frontend/src/js/constants.js, and at the bottom, change the values of the variables peerHost, peerPath, and peerPort to match what is in .env. 
+5. Do steps 2 and 3 in the strava_service folder and the crash_logging_service folder.
+6. Download and install Docker at https://www.docker.com/products/docker-desktop/
+    - You can check that you have it installed by typing in ```docker -v```
+    - To access the terminal/command line: 
+        - On Windows 11, hold shift, right-click on a folder area in Windows explorer, and select "Open in Terminal". 
+        - On Windows 10, hold shift, right-click on a folder area in Windows explorer, and select "open PowerShell window here". 
+7. Go back to the backend folder, and open up the command line in it.
+8. On the command line, type in ```docker-compose up``` (Leave this terminal window running)
+9. Go into the frontend code, go to `src/js/crashReporter.js`, and change the value of BACKEND_URL to the URL that you are running the crash reporter on, without any paths. 
+10. The next steps are only if you want to be able to connect and upload to Strava. Strava requires a **secure public address (HTTPS)**
+    1. This will require some technical knowledge, you can still upload through Strava manually downloading a TCX
+11. Download ngrok at https://ngrok.com/download/windows if not downloaded (downloading from the Microsoft Store is OK)
+12. Setup ngrok if not set up
+    1. Sign up if you don't already have a login https://dashboard.ngrok.com/signup
+    2. Install your authtoken https://dashboard.ngrok.com/get-started/your-authtoken
+13. Run ngrok in powershell or command line terminal `ngrok http 8080` (Leave this terminal window running)
+    1. You will see something like : `Forwarding https://jacoby-vitriolic-unruly.ngrok-free.dev -> http://localhost:8080`
+14. Copy the domain from your ngrok URL into Strava’s Authorization Callback Domain field https://www.strava.com/settings/api
+15. Go into your frontend code, go to `src/js/strava.js`, and replace the 2 following lines with your Strava Client ID and the https ngrok URL:
+    - this.CLIENT_ID = "INPUT CLIENT ID"; - your Strava client id
+    - this.BACKEND_URL = "https://YOUR-BACKEND.com"; - your ngrok URL
+16. Close ngrok/terminal windows when you are done using the service
+
+Instead of doing steps 7 and 8, you can double-click on backend.bat. This will run the backend without needing to use the command line. You will still need to create your .env files, and change the values in constants.js.
+
+## Backend Notes: 
+When running the backend locally, multiplayer will not work properly. You will only be able to run local multiplayer using two browser instances on the same computer.
+Ngrok is used to safely give your local server a temporary secure public address without exposing your computer or requiring router changes.
+
+# Reopening Zlow
+When you close the command terminal, you will have to rerun the commands related to the fronend and backend to run Zlow again. You will not have to redownload Git, Python, Docker, or the Zlow source code itself. 
+
+If you simply close the browser window, you will just have to enter ```localhost:8000/src/html/mainMenu.html``` in the web browser's address bar to reopen Zlow. 
+
+To update Zlow, follow these steps: 
+
+1. In the file explorer, go to the folder you downloaded Zlow to, and open the command line in it.
+    - To access the terminal/command line: 
+        - On Windows 11, hold shift, right-click on a folder area in Windows explorer, and select "Open in Terminal". 
+        - On Windows 10, hold shift, right-click on a folder area in Windows explorer, and select "open PowerShell window here". 
+2. in the command line, enter the command ```git pull```.
+
+You can also run update.bat by double-clicking on the file. This will update Zlow without needing to use the command line. 
+
+You do not need to close and reopen the main program terminal if you already have it running. You only need to close and reopen the backend.
